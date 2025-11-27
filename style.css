@@ -1,0 +1,215 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+}
+
+body {
+  background: #05050a;
+  color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Layout */
+.app-container {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+/* Controls panel (left) */
+.controls-panel {
+  width: 360px;
+  padding: 16px 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: radial-gradient(circle at top left, #151520 0, #05050a 55%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+/* Buttons */
+.category-buttons,
+.subcategory-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.subcategory-buttons.hidden,
+.jewelry-list-wrapper.hidden {
+  display: none;
+}
+
+.btn {
+  border: none;
+  outline: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f5;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn.active {
+  background: linear-gradient(135deg, #f2b547, #f07a38);
+  color: #100a05;
+  box-shadow: 0 4px 14px rgba(242, 181, 71, 0.6);
+}
+
+.main-btn {
+  flex: 1;
+}
+
+.sub-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Jewelry list */
+.jewelry-lists {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.jewelry-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.jewelry-list {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.jewelry-list::-webkit-scrollbar {
+  height: 4px;
+}
+
+.jewelry-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jewelry-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+}
+
+.jewelry-item-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.jewelry-item-img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
+  transition: transform 0.1s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.jewelry-item-img:hover {
+  transform: translateY(-1px) scale(1.02);
+  border-color: rgba(242, 181, 71, 0.9);
+  box-shadow: 0 4px 12px rgba(242, 181, 71, 0.4);
+}
+
+.jewelry-item-img.selected {
+  border-color: rgba(242, 181, 71, 1);
+  box-shadow: 0 4px 14px rgba(242, 181, 71, 0.65);
+}
+
+/* Camera panel (right) */
+.camera-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 8px;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+}
+
+#webcam,
+#overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-footer {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.hint-text {
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .app-container {
+    flex-direction: column-reverse;
+  }
+
+  .controls-panel {
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .camera-panel {
+    min-height: 55vh;
+  }
+}
