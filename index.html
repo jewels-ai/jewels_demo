@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>AR Jewelry Try-On</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Styles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#05050a" />
   <link rel="stylesheet" href="style.css" />
+
   <!-- MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -13,24 +14,37 @@
 <body>
   <div class="app-container">
 
-    <!-- Controls Panel -->
+    <!-- Camera section (on mobile this comes FIRST and takes most of the screen) -->
+    <div class="camera-panel">
+      <div class="video-wrapper">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="camera-footer">
+        <span class="hint-text">
+          Tip: Stand in good light and keep your face in the center.
+        </span>
+      </div>
+    </div>
+
+    <!-- Controls section (bottom sheet on mobile) -->
     <div class="controls-panel">
       <h1 class="app-title">AR Jewelry Try-On</h1>
 
-      <!-- Main category buttons -->
+      <!-- Main category -->
       <div class="category-buttons">
         <button class="btn main-btn" data-main="earrings">EARRINGS</button>
         <button class="btn main-btn" data-main="necklaces">CHAINS</button>
       </div>
 
-      <!-- Subcategory buttons (gold / diamond) -->
+      <!-- Subtype -->
       <div id="subcategory-buttons" class="subcategory-buttons hidden">
         <span class="sub-label">Select Type:</span>
         <button class="btn sub-btn" data-type="gold">Gold</button>
         <button class="btn sub-btn" data-type="diamond">Diamond</button>
       </div>
 
-      <!-- Jewelry lists -->
+      <!-- Lists -->
       <div class="jewelry-lists">
         <div id="earrings-list-wrapper" class="jewelry-list-wrapper hidden">
           <h2 class="list-title">Earrings Options</h2>
@@ -44,23 +58,8 @@
       </div>
     </div>
 
-    <!-- Camera Panel -->
-    <div class="camera-panel">
-      <div class="video-wrapper">
-        <video id="webcam" autoplay playsinline muted></video>
-        <canvas id="overlay"></canvas>
-      </div>
-
-      <div class="camera-footer">
-        <span class="hint-text">
-          Tip: Stand in good light and look straight at the camera.
-        </span>
-      </div>
-    </div>
-
   </div>
 
-  <!-- Main Script -->
   <script src="script.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// ================== CONFIG ==================
+// =============== CONFIG ===============
 const API_KEY = "AIzaSyBhi05HMVGg90dPP91zG1RZtNxm-d6hnQw";
 
 const DRIVE_FOLDERS = {
@@ -8,7 +8,6 @@ const DRIVE_FOLDERS = {
   gold_necklaces: "1QIvX-PrSVrK9gz-TEksqiKlXPGv2hsS5",
 };
 
-// Landmark indices (MediaPipe)
 const LANDMARKS = {
   leftEye: 33,
   rightEye: 263,
@@ -17,29 +16,23 @@ const LANDMARKS = {
   chin: 152,
 };
 
-// Smoothing factor
 const SMOOTHING_ALPHA = 0.7;
 
-// ================== DOM ELEMENTS ==================
+// =============== DOM ===============
 const videoEl = document.getElementById("webcam");
 const canvasEl = document.getElementById("overlay");
 const ctx = canvasEl.getContext("2d");
 
 const subcategoryButtonsEl = document.getElementById("subcategory-buttons");
-
 const earringsListWrapper = document.getElementById("earrings-list-wrapper");
 const earringsListEl = document.getElementById("earrings-list");
-
 const necklacesListWrapper = document.getElementById("necklaces-list-wrapper");
 const necklacesListEl = document.getElementById("necklaces-list");
 
 const mainButtons = document.querySelectorAll(".main-btn");
 const subButtons = document.querySelectorAll(".sub-btn");
 
-// ================== STATE ==================
-let faceMesh = null;
-let hasWebcamStream = false;
-
+// =============== STATE ===============
 let currentMainCategory = null; // "earrings" | "necklaces"
 let currentSubType = null; // "gold" | "diamond"
 
@@ -51,7 +44,6 @@ const necklaceImg = new Image();
 let earringLoaded = false;
 let necklaceLoaded = false;
 
-// Smoothing state
 let smoothedPoints = {
   leftEar: null,
   rightEar: null,
@@ -60,36 +52,60 @@ let smoothedPoints = {
   rightEye: null,
 };
 
-// To avoid spamming FaceMesh
+let faceMesh = null;
 let isProcessingFrame = false;
+let hasWebcamStream = false;
+let currentStream = null;
 
-// ================== INIT ==================
+// =============== INIT ===============
 document.addEventListener("DOMContentLoaded", () => {
   setupUI();
   initFaceMesh();
   startCamera();
+
+  // Adjust overlay when viewport/orientation changes
+  window.addEventListener("resize", () => {
+    resizeCanvasToVideo();
+  });
+
+  window.addEventListener("orientationchange", () => {
+    setTimeout(resizeCanvasToVideo, 300);
+  });
 });
 
-// ================== CAMERA ==================
+// =============== CAMERA ===============
 function startCamera() {
+  // Stop old stream if any (avoid issues when reopening on mobile)
+  if (currentStream) {
+    currentStream.getTracks().forEach((t) => t.stop());
+    currentStream = null;
+  }
+
+  const constraints = {
+    video: {
+      facingMode: { ideal: "user" }, // front camera
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+    audio: false,
+  };
+
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    console.error("getUserMedia is not supported in this browser.");
+    console.error("getUserMedia not supported.");
     return;
   }
 
   navigator.mediaDevices
-    .getUserMedia({
-      video: {
-        facingMode: "user",
-      },
-      audio: false,
-    })
+    .getUserMedia(constraints)
     .then((stream) => {
+      currentStream = stream;
       hasWebcamStream = true;
       videoEl.srcObject = stream;
 
       videoEl.onloadedmetadata = () => {
-        videoEl.play();
+        videoEl.play().catch((err) => {
+          console.warn("Video play() interrupted:", err);
+        });
         resizeCanvasToVideo();
         requestAnimationFrame(processVideoFrame);
       };
@@ -101,14 +117,12 @@ function startCamera() {
 
 function resizeCanvasToVideo() {
   const rect = videoEl.getBoundingClientRect();
-  // Use intrinsic size if available
-  const w = videoEl.videoWidth || rect.width;
-  const h = videoEl.videoHeight || rect.height;
-  canvasEl.width = w;
-  canvasEl.height = h;
+  if (!rect.width || !rect.height) return;
+  canvasEl.width = rect.width;
+  canvasEl.height = rect.height;
 }
 
-// ================== MEDIAPIPE SETUP ==================
+// =============== MEDIAPIPE ===============
 function initFaceMesh() {
   faceMesh = new FaceMesh({
     locateFile: (file) =>
@@ -146,7 +160,7 @@ function processVideoFrame() {
   requestAnimationFrame(processVideoFrame);
 }
 
-// ================== FACE RESULTS ==================
+// =============== FACE RESULTS ===============
 function onFaceResults(results) {
   ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
@@ -167,7 +181,6 @@ function onFaceResults(results) {
   };
 
   smoothPoints(pts);
-
   drawJewelry();
 }
 
@@ -194,29 +207,26 @@ function smoothPoints(newPts) {
   });
 }
 
-// ================== DRAW JEWELRY ==================
+// =============== DRAW JEWELRY ===============
 function drawJewelry() {
   if (!smoothedPoints.leftEye || !smoothedPoints.rightEye) return;
 
   const w = canvasEl.width;
   const h = canvasEl.height;
 
-  // Eye distance for scaling
   const dx = smoothedPoints.rightEye.x - smoothedPoints.leftEye.x;
   const dy = smoothedPoints.rightEye.y - smoothedPoints.leftEye.y;
   const eyeDist = Math.sqrt(dx * dx + dy * dy);
 
-  // ---- Earrings ----
+  // Earrings
   if (earringLoaded && selectedEarringSrc) {
-    const scaleFactor = 0.4; // tweak if too big/small
+    const scaleFactor = 0.4; // adjust if too big/small
     const eW = eyeDist * scaleFactor;
     const eH = eW * (earringImg.height / earringImg.width);
 
     const leftPos = smoothedPoints.leftEar;
     const rightPos = smoothedPoints.rightEar;
-
-    // Slight vertical offset upwards so it sits correctly
-    const verticalOffset = -0.05 * h;
+    const verticalOffset = -0.05 * h; // little up
 
     ctx.drawImage(
       earringImg,
@@ -234,13 +244,13 @@ function drawJewelry() {
     );
   }
 
-  // ---- Necklace ----
+  // Necklace
   if (necklaceLoaded && selectedNecklaceSrc) {
     const neckPos = smoothedPoints.chin;
-    const neckWidth = w * 0.5; // 50% of frame width
+    const neckWidth = w * 0.5;
     const neckHeight = neckWidth * (necklaceImg.height / necklaceImg.width);
+    const yOffset = 0.02 * h;
 
-    const yOffset = 0.02 * h; // slightly below chin
     const x = (w - neckWidth) / 2;
     const y = neckPos.y + yOffset;
 
@@ -248,7 +258,7 @@ function drawJewelry() {
   }
 }
 
-// ================== GOOGLE DRIVE ==================
+// =============== GOOGLE DRIVE ===============
 async function fetchDriveImages(folderId) {
   const url =
     `https://www.googleapis.com/drive/v3/files` +
@@ -268,14 +278,11 @@ async function fetchDriveImages(folderId) {
 
     return data.files
       .filter((f) => f.mimeType && f.mimeType.startsWith("image/"))
-      .map((f) => {
-        const src = `https://drive.google.com/thumbnail?id=${f.id}&sz=w1000`;
-        return {
-          id: f.id,
-          name: f.name,
-          src,
-        };
-      });
+      .map((f) => ({
+        id: f.id,
+        name: f.name,
+        src: `https://drive.google.com/thumbnail?id=${f.id}&sz=w1000`,
+      }));
   } catch (err) {
     console.error("Error fetching Drive images:", err);
     return [];
@@ -283,10 +290,10 @@ async function fetchDriveImages(folderId) {
 }
 
 async function loadJewelryList(mainCategory, subType) {
-  const key = `${subType}_${mainCategory}`; // e.g. gold_earrings
+  const key = `${subType}_${mainCategory}`;
   const folderId = DRIVE_FOLDERS[key];
   if (!folderId) {
-    console.warn("No folderID for", key);
+    console.warn("No folder ID for", key);
     return;
   }
 
@@ -296,7 +303,6 @@ async function loadJewelryList(mainCategory, subType) {
   const wrapper = isEarrings ? earringsListWrapper : necklacesListWrapper;
   const listEl = isEarrings ? earringsListEl : necklacesListEl;
 
-  // Show the correct wrapper
   earringsListWrapper.classList.toggle("hidden", !isEarrings);
   necklacesListWrapper.classList.toggle("hidden", isEarrings);
 
@@ -314,7 +320,6 @@ async function loadJewelryList(mainCategory, subType) {
     btn.appendChild(img);
 
     btn.addEventListener("click", () => {
-      // Remove old selection highlight
       listEl
         .querySelectorAll(".jewelry-item-img.selected")
         .forEach((el) => el.classList.remove("selected"));
@@ -341,24 +346,19 @@ async function loadJewelryList(mainCategory, subType) {
   });
 }
 
-// ================== UI HANDLERS ==================
+// =============== UI ===============
 function setupUI() {
   mainButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const main = btn.dataset.main;
-
       currentMainCategory = main;
-      // Highlight main category button
+
       mainButtons.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      // Show subcategory row
       subcategoryButtonsEl.classList.remove("hidden");
-
-      // Reset sub selection highlight
       subButtons.forEach((b) => b.classList.remove("active"));
 
-      // Show the correct list wrapper, hide the other (until subtype chosen)
       if (main === "earrings") {
         earringsListWrapper.classList.remove("hidden");
         necklacesListWrapper.classList.add("hidden");
@@ -372,11 +372,9 @@ function setupUI() {
   subButtons.forEach((btn) => {
     btn.addEventListener("click", async () => {
       if (!currentMainCategory) return;
-
-      const type = btn.dataset.type; // gold / diamond
+      const type = btn.dataset.type;
       currentSubType = type;
 
-      // Highlight subtype button
       subButtons.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 

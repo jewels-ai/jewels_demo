@@ -6,35 +6,82 @@
     Roboto, sans-serif;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   background: #05050a;
   color: #f5f5f5;
   min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Layout */
+/* ========= LAYOUT ========= */
+
 .app-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-/* Controls panel (left) */
-.controls-panel {
-  width: 360px;
-  padding: 16px 18px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  background: radial-gradient(circle at top left, #151520 0, #05050a 55%);
+/* CAMERA (TOP on mobile) */
+.camera-panel {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  padding: 8px 8px 0;
+  gap: 6px;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-height: 68vh; /* camera takes major space on mobile */
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+}
+
+#webcam,
+#overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-footer {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.hint-text {
+  display: inline-block;
+}
+
+/* CONTROLS (BOTTOM SHEET on mobile) */
+.controls-panel {
+  flex: 0 0 auto;
+  padding: 10px 12px 10px;
+  background: radial-gradient(circle at top left, #151520 0, #05050a 55%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 40vh; /* bottom sheet style */
+  overflow: hidden;
 }
 
 .app-title {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: 0.03em;
-  margin-bottom: 4px;
 }
 
 /* Buttons */
@@ -54,7 +101,7 @@ body {
 .btn {
   border: none;
   outline: none;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
   cursor: pointer;
   font-size: 0.9rem;
@@ -64,6 +111,7 @@ body {
   backdrop-filter: blur(10px);
   transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  touch-action: manipulation;
 }
 
 .btn:hover {
@@ -87,24 +135,24 @@ body {
   opacity: 0.8;
 }
 
-/* Jewelry list */
+/* Jewelry lists */
 .jewelry-lists {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   overflow-y: auto;
-  padding-right: 3px;
+  padding-right: 2px;
 }
 
 .jewelry-list-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .list-title {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   opacity: 0.9;
 }
@@ -114,7 +162,7 @@ body {
   flex-direction: row;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .jewelry-list::-webkit-scrollbar {
@@ -138,13 +186,13 @@ body {
 }
 
 .jewelry-item-img {
-  width: 70px;
-  height: 70px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 6px;
+  padding: 8px;
   transition: transform 0.1s ease, box-shadow 0.15s ease,
     border-color 0.15s ease;
 }
@@ -160,56 +208,25 @@ body {
   box-shadow: 0 4px 14px rgba(242, 181, 71, 0.65);
 }
 
-/* Camera panel (right) */
-.camera-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 8px;
-  gap: 8px;
-}
-
-.video-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
-  overflow: hidden;
-  background: #000;
-}
-
-#webcam,
-#overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.camera-footer {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  text-align: center;
-}
-
-.hint-text {
-  display: inline-block;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
+/* ========= DESKTOP / TABLET ========= */
+@media (min-width: 900px) {
   .app-container {
-    flex-direction: column-reverse;
-  }
-
-  .controls-panel {
-    width: 100%;
-    border-right: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-direction: row;
   }
 
   .camera-panel {
-    min-height: 55vh;
+    flex: 1 1 60%;
+    padding: 10px;
+  }
+
+  .video-wrapper {
+    max-height: none;
+  }
+
+  .controls-panel {
+    flex: 0 0 340px;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    max-height: 100vh;
   }
 }
