@@ -2,70 +2,404 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AR Jewelry Try-On</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#05050a" />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Virtual Jewels Try-On</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel&family=Poppins&display=swap" rel="stylesheet">
 
-  <!-- MediaPipe -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel&family=Poppins&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #0b0b0b;
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
+    }
+
+    video, canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    #branding {
+      position: fixed;
+      top: 21px;
+      left: 20px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      z-index: 5;
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      color: #000;
+    }
+
+    #branding img {
+      width: 80px;
+      height: auto;
+      margin-right: 10px;
+    }
+
+    /* Main Jewelry Category Buttons */
+    #jewelry-mode {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 15px;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    #jewelry-mode button {
+      background-color: #5E0F8B;
+      color: #ffffff;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #jewelry-mode button:hover { background-color: #3b0764; }
+
+    /* Subcategory Buttons */
+    #subcategory-buttons {
+      position: fixed;
+      bottom: 130px;
+      left: 0;
+      width: 100%;
+      justify-content: center;
+      z-index: 5;
+      display: flex;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    #subcategory-buttons button {
+      background-color: #FFB800;
+      color: #000;
+      border: none;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Jewelry Options Scroll List */
+    .options-group {
+      position: fixed;
+      bottom: 70px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      gap: 15px;
+      z-index: 2;
+      background: #5E0F8B;
+      backdrop-filter: blur(10px);
+      padding: 10px 20px;
+      border-radius: 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .options-group::-webkit-scrollbar { display: none; }
+
+    .options-group button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .options-group button img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      transition: transform 0.2s ease;
+    }
+
+    .options-group button:hover img {
+      border: 2px solid #fff;
+      transform: scale(1.05);
+    }
+
+    /* UI Buttons (Location) */
+    .ui-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 5;
+    }
+
+    .ui-buttons button, .ui-buttons a {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .ui-buttons button:hover, .ui-buttons a:hover { background: rgba(255, 255, 255, 0.4); }
+
+    .ui-buttons button img, .ui-buttons a img { width: 25px; height: 25px; }
+  </style>
 </head>
 <body>
-  <div class="app-container">
-
-    <!-- Camera section -->
-    <div class="camera-panel">
-      <div class="video-wrapper">
-        <video id="webcam" autoplay playsinline muted></video>
-        <canvas id="overlay"></canvas>
-
-        <!-- 🔴 Mobile: explicit start button -->
-        <div id="camera-overlay">
-          <button id="start-camera-btn">Start Camera</button>
-          <p id="camera-error-text"></p>
-        </div>
-      </div>
-      <div class="camera-footer">
-        <span class="hint-text">
-          Tip: Stand in good light and keep your face in the center.
-        </span>
-      </div>
-    </div>
-
-    <!-- Controls section -->
-    <div class="controls-panel">
-      <h1 class="app-title">AR Jewelry Try-On</h1>
-
-      <!-- Main category -->
-      <div class="category-buttons">
-        <button class="btn main-btn" data-main="earrings">EARRINGS</button>
-        <button class="btn main-btn" data-main="necklaces">CHAINS</button>
-      </div>
-
-      <!-- Subtype -->
-      <div id="subcategory-buttons" class="subcategory-buttons hidden">
-        <span class="sub-label">Select Type:</span>
-        <button class="btn sub-btn" data-type="gold">Gold</button>
-        <button class="btn sub-btn" data-type="diamond">Diamond</button>
-      </div>
-
-      <!-- Lists -->
-      <div class="jewelry-lists">
-        <div id="earrings-list-wrapper" class="jewelry-list-wrapper hidden">
-          <h2 class="list-title">Earrings Options</h2>
-          <div id="earrings-list" class="jewelry-list"></div>
-        </div>
-
-        <div id="necklaces-list-wrapper" class="jewelry-list-wrapper hidden">
-          <h2 class="list-title">Chain / Necklace Options</h2>
-          <div id="necklaces-list" class="jewelry-list"></div>
-        </div>
-      </div>
-    </div>
-
+  <div class="video-container">
+    <video id="webcam" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
   </div>
 
-  <script src="script.js"></script>
+  <div id="branding">
+    <img src="logo.png" alt="Overlay Jewels Logo" class="logo-icon" />
+  </div>
+
+  <div class="ui-buttons">
+    <a id="location-btn" href="https://maps.app.goo.gl/gsTuBCVMUVk9cxYZ6" target="_blank" rel="noopener noreferrer">
+      <img src="location_icon.png" alt="Location" />
+    </a>
+  </div>
+  
+  <div id="jewelry-mode" class="button-group">
+    <button onclick="toggleCategory('earrings')">EARRINGS</button>
+    <button onclick="toggleCategory('necklaces')">CHAINS</button>
+  </div>
+
+  <div id="subcategory-buttons" class="button-group" style="display: none;">
+    <button onclick="selectJewelryType(currentType, 'gold')">Gold</button>
+    <button onclick="selectJewelryType(currentType, 'diamond')">Diamond</button>
+  </div>
+  
+  <div id="jewelry-options" class="options-group" style="display: none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+  <script>
+    /* ===========================
+       MAIN APP CODE
+    ============================ */
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('overlay');
+    const canvasCtx = canvasElement.getContext('2d');
+
+    const subcategoryButtons = document.getElementById('subcategory-buttons');
+    const jewelryOptions = document.getElementById('jewelry-options');
+
+    let earringImg = null;
+    let necklaceImg = null;
+
+    let currentType = '';
+    let smoothedFaceLandmarks = null;
+    let camera;
+    let smoothedFacePoints = {};
+
+   const API_KEY = "AIzaSyBhi05HMVGg90dPP91zG1RZtNxm-d6hnQw";
+
+const driveFolders = {
+  diamond_earrings: "1N0jndAEIThUuuNAJpvuRMGsisIaXCgMZ",
+  diamond_necklaces: "1JGV8T03YdzjfW0Dyt9aMPybH8V9-gEhw",
+  gold_earrings: "1GMZpcv4A1Gy2xiaIC1XPG_IOAt9NrDpi",
+  gold_necklaces: "1QIvX-PrSVrK9gz-TEksqiKlXPGv2hsS5",
+};
+
+    async function fetchDriveImages(folderId) {
+      const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&key=${API_KEY}&fields=files(id,name,mimeType)`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.files) return [];
+      return data.files
+        .filter(f => f.mimeType.includes("image/"))
+        .map(f => {
+          const link = `https://drive.google.com/thumbnail?id=${f.id}&sz=w1000`;
+          return { id: f.id, name: f.name, src: link };
+        });
+    }
+
+    async function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function changeJewelry(type, src) {
+      const img = await loadImage(src);
+      if (!img) return;
+      earringImg = necklaceImg = null;
+      if (type.includes('earrings')) earringImg = img;
+      else if (type.includes('necklaces')) necklaceImg = img;
+    }
+
+    function toggleCategory(category) {
+      jewelryOptions.style.display = 'none';
+      subcategoryButtons.style.display = 'none';
+      currentType = category;
+      subcategoryButtons.style.display = 'flex';
+      startCamera('user');
+    }
+
+    function selectJewelryType(mainType, subType) {
+      currentType = `${subType}_${mainType}`;
+      subcategoryButtons.style.display = 'none';
+      jewelryOptions.style.display = 'flex';
+      insertJewelryOptions(currentType, 'jewelry-options');
+    }
+
+    async function insertJewelryOptions(type, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (!driveFolders[type]) return;
+      const images = await fetchDriveImages(driveFolders[type]);
+      images.forEach((file, i) => {
+        const btn = document.createElement('button');
+        const img = document.createElement('img');
+        img.src = file.src;
+        img.alt = `${type.replace('_', ' ')} ${i + 1}`;
+        btn.appendChild(img);
+        btn.onclick = () => changeJewelry(type, file.src);
+        container.appendChild(btn);
+      });
+    }
+
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    });
+    faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+
+    faceMesh.onResults((results) => {
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const newLandmarks = results.multiFaceLandmarks[0];
+        if (!smoothedFaceLandmarks) {
+          smoothedFaceLandmarks = newLandmarks;
+        } else {
+          const smoothingFactor = 0.2;
+          smoothedFaceLandmarks = smoothedFaceLandmarks.map((prev, i) => ({
+            x: prev.x * (1 - smoothingFactor) + newLandmarks[i].x * smoothingFactor,
+            y: prev.y * (1 - smoothingFactor) + newLandmarks[i].y * smoothingFactor,
+            z: prev.z * (1 - smoothingFactor) + newLandmarks[i].z * smoothingFactor,
+          }));
+        }
+      } else {
+        smoothedFaceLandmarks = null;
+      }
+      drawJewelry(smoothedFaceLandmarks, canvasCtx);
+    });
+
+    async function startCamera(facingMode) {
+      if (camera) camera.stop();
+      camera = new Camera(videoElement, {
+        onFrame: async () => { await faceMesh.send({ image: videoElement }); },
+        width: 1280,
+        height: 720,
+        facingMode: facingMode
+      });
+      camera.start();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => startCamera('user'));
+
+    videoElement.addEventListener('loadedmetadata', () => {
+      canvasElement.width = videoElement.videoWidth;
+      canvasElement.height = videoElement.videoHeight;
+    });
+
+    function smoothPoint(prev, current, factor = 0.4) {
+      if (!prev) return current;
+      return {
+        x: prev.x * (1 - factor) + current.x * factor,
+        y: prev.y * (1 - factor) + current.y * factor
+      };
+    }
+
+    /* ===========================
+       DRAW JEWELRY (Dynamic earrings)
+    ============================ */
+    function drawJewelry(faceLandmarks, ctx) {
+      if (faceLandmarks) {
+        const vw = canvasElement.width;
+        const vh = canvasElement.height;
+
+        // --- Eye distance for scaling earrings ---
+        const Leye = faceLandmarks[33];
+        const Reye = faceLandmarks[263];
+        const dx = (Reye.x - Leye.x) * vw;
+        const dy = (Reye.y - Leye.y) * vh;
+        const eyeDist = Math.hypot(dx, dy);
+
+        // --- Ear Landmarks ---
+        const leftEar = faceLandmarks[132];
+        const rightEar = faceLandmarks[361];
+        let leftEarPos = { x: leftEar.x * vw, y: leftEar.y * vh };
+        let rightEarPos = { x: rightEar.x * vw, y: rightEar.y * vh };
+
+        smoothedFacePoints.leftEar = smoothPoint(smoothedFacePoints.leftEar, leftEarPos);
+        smoothedFacePoints.rightEar = smoothPoint(smoothedFacePoints.rightEar, rightEarPos);
+
+        // --- Earrings ---
+        if (earringImg) {
+          const scaleFactor = 0.4; // adjust if needed
+          const w = eyeDist * scaleFactor;
+          const h = w * (earringImg.height / earringImg.width);
+
+          ctx.drawImage(earringImg, smoothedFacePoints.leftEar.x - w / 2, smoothedFacePoints.leftEar.y, w, h);
+          ctx.drawImage(earringImg, smoothedFacePoints.rightEar.x - w / 2, smoothedFacePoints.rightEar.y, w, h);
+        }
+
+        // --- Necklace ---
+        if (necklaceImg) {
+          const neck = faceLandmarks[152];
+          let neckPos = { x: neck.x * vw, y: neck.y * vh + 10 };
+          smoothedFacePoints.neck = smoothPoint(smoothedFacePoints.neck, neckPos);
+
+          const necklaceScale = 0.25; // adjust if needed
+          const w = necklaceImg.width * necklaceScale;
+          const h = necklaceImg.height * necklaceScale;
+
+          ctx.drawImage(necklaceImg, smoothedFacePoints.neck.x - w / 2, smoothedFacePoints.neck.y, w, h);
+        }
+      }
+    }
+
+    /* ===========================
+       DISABLE RIGHT CLICK & DEV TOOLS
+    ============================ */
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.onkeydown = function(e) {
+      if (e.keyCode === 123) return false; // F12
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67 || e.keyCode === 75)) return false;
+      if (e.ctrlKey && e.keyCode === 85) return false; // Ctrl+U
+    };
+  </script>
 </body>
 </html>
