@@ -14,11 +14,17 @@
 <body>
   <div class="app-container">
 
-    <!-- Camera section (on mobile this comes FIRST and takes most of the screen) -->
+    <!-- Camera section -->
     <div class="camera-panel">
       <div class="video-wrapper">
         <video id="webcam" autoplay playsinline muted></video>
         <canvas id="overlay"></canvas>
+
+        <!-- 🔴 Mobile: explicit start button -->
+        <div id="camera-overlay">
+          <button id="start-camera-btn">Start Camera</button>
+          <p id="camera-error-text"></p>
+        </div>
       </div>
       <div class="camera-footer">
         <span class="hint-text">
@@ -27,7 +33,7 @@
       </div>
     </div>
 
-    <!-- Controls section (bottom sheet on mobile) -->
+    <!-- Controls section -->
     <div class="controls-panel">
       <h1 class="app-title">AR Jewelry Try-On</h1>
 

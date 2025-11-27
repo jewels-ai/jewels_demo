@@ -23,6 +23,10 @@ const videoEl = document.getElementById("webcam");
 const canvasEl = document.getElementById("overlay");
 const ctx = canvasEl.getContext("2d");
 
+const cameraOverlayEl = document.getElementById("camera-overlay");
+const startCameraBtn = document.getElementById("start-camera-btn");
+const cameraErrorText = document.getElementById("camera-error-text");
+
 const subcategoryButtonsEl = document.getElementById("subcategory-buttons");
 const earringsListWrapper = document.getElementById("earrings-list-wrapper");
 const earringsListEl = document.getElementById("earrings-list");
@@ -33,8 +37,8 @@ const mainButtons = document.querySelectorAll(".main-btn");
 const subButtons = document.querySelectorAll(".sub-btn");
 
 // =============== STATE ===============
-let currentMainCategory = null; // "earrings" | "necklaces"
-let currentSubType = null; // "gold" | "diamond"
+let currentMainCategory = null;
+let currentSubType = null;
 
 let selectedEarringSrc = null;
 let selectedNecklaceSrc = null;
@@ -61,39 +65,52 @@ let currentStream = null;
 document.addEventListener("DOMContentLoaded", () => {
   setupUI();
   initFaceMesh();
-  startCamera();
 
-  // Adjust overlay when viewport/orientation changes
+  // IMPORTANT: do NOT auto-start camera – wait for user tap
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraError("Camera is not supported in this browser.");
+  }
+
+  startCameraBtn.addEventListener("click", () => {
+    startCameraBtn.disabled = true;
+    cameraErrorText.textContent = "";
+    startCamera();
+  });
+
   window.addEventListener("resize", () => {
     resizeCanvasToVideo();
   });
 
   window.addEventListener("orientationchange", () => {
-    setTimeout(resizeCanvasToVideo, 300);
+    setTimeout(resizeCanvasToVideo, 400);
   });
 });
 
 // =============== CAMERA ===============
 function startCamera() {
-  // Stop old stream if any (avoid issues when reopening on mobile)
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraError("Camera is not supported in this browser.");
+    return;
+  }
+
+  // Stop previous stream if any
   if (currentStream) {
     currentStream.getTracks().forEach((t) => t.stop());
     currentStream = null;
   }
 
+  // Simplified constraints – better for mobile
   const constraints = {
     video: {
-      facingMode: { ideal: "user" }, // front camera
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
+      facingMode: "user",
     },
     audio: false,
   };
 
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    console.error("getUserMedia not supported.");
-    return;
-  }
+  // For iOS Safari – ensure attributes
+  videoEl.setAttribute("playsinline", "true");
+  videoEl.setAttribute("autoplay", "true");
+  videoEl.muted = true;
 
   navigator.mediaDevices
     .getUserMedia(constraints)
@@ -102,16 +119,26 @@ function startCamera() {
       hasWebcamStream = true;
       videoEl.srcObject = stream;
 
-      videoEl.onloadedmetadata = () => {
-        videoEl.play().catch((err) => {
-          console.warn("Video play() interrupted:", err);
-        });
+      const onReady = () => {
         resizeCanvasToVideo();
+        cameraOverlayEl.style.display = "none";
         requestAnimationFrame(processVideoFrame);
       };
+
+      // Some mobiles fire loadeddata instead of loadedmetadata reliably
+      videoEl.onloadedmetadata = onReady;
+      videoEl.onloadeddata = onReady;
+
+      return videoEl
+        .play()
+        .catch((err) => console.warn("Video play interrupted", err));
     })
     .catch((err) => {
       console.error("Error accessing camera:", err);
+      showCameraError(
+        "Unable to access camera. Please allow camera permission and use HTTPS."
+      );
+      startCameraBtn.disabled = false;
     });
 }
 
@@ -120,6 +147,11 @@ function resizeCanvasToVideo() {
   if (!rect.width || !rect.height) return;
   canvasEl.width = rect.width;
   canvasEl.height = rect.height;
+}
+
+function showCameraError(msg) {
+  cameraErrorText.textContent = msg;
+  cameraOverlayEl.style.display = "flex";
 }
 
 // =============== MEDIAPIPE ===============
@@ -220,13 +252,13 @@ function drawJewelry() {
 
   // Earrings
   if (earringLoaded && selectedEarringSrc) {
-    const scaleFactor = 0.4; // adjust if too big/small
+    const scaleFactor = 0.4;
     const eW = eyeDist * scaleFactor;
     const eH = eW * (earringImg.height / earringImg.width);
 
     const leftPos = smoothedPoints.leftEar;
     const rightPos = smoothedPoints.rightEar;
-    const verticalOffset = -0.05 * h; // little up
+    const verticalOffset = -0.05 * h;
 
     ctx.drawImage(
       earringImg,
@@ -300,7 +332,6 @@ async function loadJewelryList(mainCategory, subType) {
   const images = await fetchDriveImages(folderId);
   const isEarrings = mainCategory === "earrings";
 
-  const wrapper = isEarrings ? earringsListWrapper : necklacesListWrapper;
   const listEl = isEarrings ? earringsListEl : necklacesListEl;
 
   earringsListWrapper.classList.toggle("hidden", !isEarrings);
